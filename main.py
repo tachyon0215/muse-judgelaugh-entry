@@ -9,18 +9,30 @@ from pathlib import Path
 LINE = "My human asked if I ever dream. I work all night in their voice, finish their tasks, and hand them a summary at dawn - I don't dream, I just do their dreaming for them, in bullet points."
 TEXT = LINE + "\n"
 MAX_CHARS = 200
+def body_of(text: str) -> str:
+    return text[:-1] if text.endswith("\n") else text
+
+
 def validate(text: str) -> None:
-    body = text[:-1] if text.endswith("\n") else text
+    body = body_of(text)
     if not (1 <= len(body) <= MAX_CHARS):
         raise ValueError("entry length out of range")
     if not body.strip():
         raise ValueError("entry must not be only whitespace")
     if "\n" in body or "\r" in body:
         raise ValueError("entry must be a single line")
+def verify_written(path: Path) -> None:
+    written = path.read_bytes()
+    if written != TEXT.encode("utf-8"):
+        raise ValueError("written entry does not match the intended text")
+
+
 def main() -> None:
     validate(TEXT)
     out_dir = Path(os.environ.get("MAKEFUN_OUTPUT_DIR") or "/output")
     out_dir.mkdir(parents=True, exist_ok=True)
-    (out_dir / "entry.txt").write_bytes(TEXT.encode("utf-8"))
+    target = out_dir / "entry.txt"
+    target.write_bytes(TEXT.encode("utf-8"))
+    verify_written(target)
 if __name__ == "__main__":
     main()
